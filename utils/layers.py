@@ -14,8 +14,8 @@ def attn_head(seq, out_sz, bias_mat, activation, in_drop=0.0, coef_drop=0.0, res
         f_1 = tf.layers.conv1d(seq_fts, 1, 1)
         f_2 = tf.layers.conv1d(seq_fts, 1, 1)
         logits = f_1 + tf.transpose(f_2, [0, 2, 1])
-        coefs = tf.nn.softmax(tf.nn.leaky_relu(logits) + bias_mat)
-
+        coefs = tf.nn.softmax(tf.nn.leaky_relu(logits) + bias_mat)# bias_mat is the mask
+        
         if coef_drop != 0.0:
             coefs = tf.nn.dropout(coefs, 1.0 - coef_drop)
         if in_drop != 0.0:
