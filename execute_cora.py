@@ -23,7 +23,7 @@ n_heads = [8, 1] # additional entry for the output layer
 residual = False
 nonlinearity = tf.nn.elu
 model = GAT
-num_experiments = 5
+num_experiments = 2
 
 print('Dataset: ' + dataset)
 print('----- Opt. hyperparams -----')
@@ -57,40 +57,40 @@ test_mask = test_mask[np.newaxis]
 
 biases = process.adj_to_bias(adj, [nb_nodes], nhood=1)
 
-with tf.Graph().as_default():
-    with tf.name_scope('input'):
-        ftr_in = tf.placeholder(dtype=tf.float32, shape=(batch_size, nb_nodes, ft_size))
-        bias_in = tf.placeholder(dtype=tf.float32, shape=(batch_size, nb_nodes, nb_nodes))
-        lbl_in = tf.placeholder(dtype=tf.int32, shape=(batch_size, nb_nodes, nb_classes))
-        msk_in = tf.placeholder(dtype=tf.int32, shape=(batch_size, nb_nodes))
-        attn_drop = tf.placeholder(dtype=tf.float32, shape=())
-        ffd_drop = tf.placeholder(dtype=tf.float32, shape=())
-        is_train = tf.placeholder(dtype=tf.bool, shape=())
-
-    logits = model.inference(ftr_in, nb_classes, nb_nodes, is_train,
-                                attn_drop, ffd_drop,
-                                bias_mat=bias_in,
-                                hid_units=hid_units, n_heads=n_heads,
-                                residual=residual, activation=nonlinearity)
-    log_resh = tf.reshape(logits, [-1, nb_classes])
-    lab_resh = tf.reshape(lbl_in, [-1, nb_classes])
-    msk_resh = tf.reshape(msk_in, [-1])
-    loss = model.masked_softmax_cross_entropy(log_resh, lab_resh, msk_resh)
-    accuracy = model.masked_accuracy(log_resh, lab_resh, msk_resh)
-
-    train_op = model.training(loss, lr, l2_coef)
-
-    saver = tf.train.Saver()
-
-    init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
-
-    vlss_mn = np.inf
-    vacc_mx = 0.0
-    curr_step = 0
-
-    test_acc = []
+test_acc = []
     
-    for _ in range(num_experiments):
+for _ in range(num_experiments):
+    with tf.Graph().as_default():
+        with tf.name_scope('input'):
+            ftr_in = tf.placeholder(dtype=tf.float32, shape=(batch_size, nb_nodes, ft_size))
+            bias_in = tf.placeholder(dtype=tf.float32, shape=(batch_size, nb_nodes, nb_nodes))
+            lbl_in = tf.placeholder(dtype=tf.int32, shape=(batch_size, nb_nodes, nb_classes))
+            msk_in = tf.placeholder(dtype=tf.int32, shape=(batch_size, nb_nodes))
+            attn_drop = tf.placeholder(dtype=tf.float32, shape=())
+            ffd_drop = tf.placeholder(dtype=tf.float32, shape=())
+            is_train = tf.placeholder(dtype=tf.bool, shape=())
+
+        logits = model.inference(ftr_in, nb_classes, nb_nodes, is_train,
+                                    attn_drop, ffd_drop,
+                                    bias_mat=bias_in,
+                                    hid_units=hid_units, n_heads=n_heads,
+                                    residual=residual, activation=nonlinearity)
+        log_resh = tf.reshape(logits, [-1, nb_classes])
+        lab_resh = tf.reshape(lbl_in, [-1, nb_classes])
+        msk_resh = tf.reshape(msk_in, [-1])
+        loss = model.masked_softmax_cross_entropy(log_resh, lab_resh, msk_resh)
+        accuracy = model.masked_accuracy(log_resh, lab_resh, msk_resh)
+
+        train_op = model.training(loss, lr, l2_coef)
+
+        saver = tf.train.Saver()
+
+        init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
+
+        vlss_mn = np.inf
+        vacc_mx = 0.0
+        curr_step = 0
+
         with tf.Session() as sess:
             sess.run(init_op)
 
@@ -179,8 +179,8 @@ with tf.Graph().as_default():
             print('Test loss:', ts_loss/ts_step, '; Test accuracy:', ts_acc/ts_step)
             test_acc.append(ts_acc/ts_step)
             sess.close()
-    print(test_acc)
-    print(statistics.mean(test_acc))
-    print(statistics.stdev(test_acc))
-    with open('test_acc_8heads.plk','wb') as f:
-        pickle.dump(test_acc,f)
+print(test_acc)
+print(statistics.mean(test_acc))
+print(statistics.stdev(test_acc))
+with open('test_acc_8heads.plk','wb') as f:
+    pickle.dump(test_acc,f)
